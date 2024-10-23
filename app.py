@@ -402,14 +402,16 @@ def main():
         st.session_state['severity'] = None
 
     # Check if action is defined in session state and route accordingly
-    if st.session_state['action']:
-        if st.session_state['action'] == 'appointment':
+    action = st.session_state.get('action')  # Safely access the action key
+
+    if action:
+        if action == 'appointment':
             confirm_appointment(st.session_state['severity'], st.session_state['user_data'])
-        elif st.session_state['action'] == 'medicines':
+        elif action == 'medicines':
             medicine_invoice()
-        elif st.session_state['action'] == 'special_appointment':
+        elif action == 'special_appointment':
             confirm_appointment(st.session_state['severity'], st.session_state['user_data'])
-        elif st.session_state['action'] == 'priority_medicines':
+        elif action == 'priority_medicines':
             medicine_invoice()
     else:
         user_data = show_survey()
