@@ -185,13 +185,12 @@
 
 import streamlit as st
 import pandas as pd
-import pickle
+import joblib
 import time
 from sklearn.preprocessing import LabelEncoder
 
 # Load the model and encoders
-with open('logistic_regression_model.pkl', 'rb') as f:
-    model = pickle.load(f)
+model = joblib.load('logistic_regression_model.pkl')
 
 # Load the CSV file and LabelEncoders for transformation
 data = pd.read_csv('expanded_synthetic_health_data (1).csv')
@@ -299,17 +298,17 @@ def show_prescription(severity):
     if severity == 'Mild':
         st.write("### Prescription:")
         st.write("- Rest without any disturbance.")
-        st.write("- Drink lots of water.")
-        st.write("- Don't stress too much.")
-        st.write("- Try to avoid processed food.")
+        st.write("- drink Lot of water")
+        st.write("- Dont stress too Much")
+        st.write("- Try to avoid Processed food")
     elif severity == 'Moderate':
         st.write("### Prescription:")
         st.write("- Rest without any disturbance.")
-        st.write("- Drink lots of water.")
-        st.write("- Don't stress too much.")
-        st.write("- Avoid processed food.")
-        st.write("- Avoid alcohol and cigarettes if possible.")
-        st.write("- Get some fresh air (if possible).")
+        st.write("- drink Lot of water")
+        st.write("- Dont stress too much")
+        st.write("- try to avoid Processed food")
+        st.write("- Avoid Alcohol and cigarretes if possible")
+        st.write("- dont sit for too long, touch some grass")
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Book an Appointment"):
@@ -321,11 +320,11 @@ def show_prescription(severity):
                 st.experimental_rerun()
     elif severity == 'Severe':
         st.write("### Warning:")
-        st.write("- Consult a healthcare provider immediately.")
+        st.write("- Do not do anything to counter the effect.")
         st.write("### Prescription:")
-        st.write("- Do not self-medicate.")
-        st.write("- Rest without disturbance.")
-        st.write("- Drink lots of water.")
+        st.write("- Do not take any medication at your own")
+        st.write("- Rest without any disturbance.")
+        st.write("- drink Lot of water")
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Special Appointment"):
@@ -368,7 +367,7 @@ def medicine_invoice():
 
 # Main Streamlit Application
 def main():
-    st.set_page_config(page_title="Survey Page", layout="centered", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="survey page", layout="centered", initial_sidebar_state="collapsed")
     
     # Set background and text color
     st.markdown("""<style>
