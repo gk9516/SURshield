@@ -394,9 +394,12 @@ def main():
         }
         </style>""", unsafe_allow_html=True)
 
-    if 'user_data' not in st.session_state:
+if 'user_data' not in st.session_state:
         st.session_state['user_data'] = None
+    if 'action' not in st.session_state:
         st.session_state['action'] = None
+    if 'severity' not in st.session_state:
+        st.session_state['severity'] = None
 
     if st.session_state['action']:
         if st.session_state['action'] == 'appointment':
