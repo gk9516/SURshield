@@ -298,17 +298,16 @@ def show_prescription(severity):
     if severity == 'Mild':
         st.write("### Prescription:")
         st.write("- Rest without any disturbance.")
-        st.write("- drink Lot of water")
-        st.write("- Dont stress too Much")
-        st.write("- Try to avoid Processed food")
+        st.write("- Drink a lot of water.")
+        st.write("- Don't stress too much.")
+        st.write("- Try to avoid processed food.")
     elif severity == 'Moderate':
         st.write("### Prescription:")
         st.write("- Rest without any disturbance.")
-        st.write("- drink Lot of water")
-        st.write("- Dont stress too much")
-        st.write("- try to avoid Processed food")
-        st.write("- Avoid Alcohol and cigarretes if possible")
-        st.write("- dont sit for too long, touch some grass")
+        st.write("- Drink a lot of water.")
+        st.write("- Don't stress too much.")
+        st.write("- Avoid alcohol and cigarettes if possible.")
+        st.write("- Don't sit for too long, touch some grass.")
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Book an Appointment"):
@@ -322,9 +321,9 @@ def show_prescription(severity):
         st.write("### Warning:")
         st.write("- Do not do anything to counter the effect.")
         st.write("### Prescription:")
-        st.write("- Do not take any medication at your own")
+        st.write("- Do not take any medication on your own.")
         st.write("- Rest without any disturbance.")
-        st.write("- drink Lot of water")
+        st.write("- Drink a lot of water.")
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Special Appointment"):
@@ -367,7 +366,7 @@ def medicine_invoice():
 
 # Main Streamlit Application
 def main():
-    st.set_page_config(page_title="survey page", layout="centered", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="Survey Page", layout="centered", initial_sidebar_state="collapsed")
     
     # Set background and text color
     st.markdown("""<style>
@@ -394,6 +393,7 @@ def main():
         }
         </style>""", unsafe_allow_html=True)
 
+    # Initialize session state variables
     if 'user_data' not in st.session_state:
         st.session_state['user_data'] = None
     if 'action' not in st.session_state:
@@ -401,6 +401,7 @@ def main():
     if 'severity' not in st.session_state:
         st.session_state['severity'] = None
 
+    # Check if action is defined in session state and route accordingly
     if st.session_state['action']:
         if st.session_state['action'] == 'appointment':
             confirm_appointment(st.session_state['severity'], st.session_state['user_data'])
@@ -410,23 +411,14 @@ def main():
             confirm_appointment(st.session_state['severity'], st.session_state['user_data'])
         elif st.session_state['action'] == 'priority_medicines':
             medicine_invoice()
-        return
-
-    if not st.session_state['user_data']:
+    else:
         user_data = show_survey()
         if user_data:
             st.session_state['user_data'] = user_data
             st.session_state['severity'] = predict_severity(user_data)
-            st.experimental_rerun()
-            
-    else:
-        # Display result page
-        st.title("Severity Prediction Result")
-        st.write("### Your condition based on your response seems to be:")
-        severity = st.session_state['severity']
-        st.markdown(f"<div style='background-color:#b3d9ff;padding:20px;text-align:center;border-radius:10px;'>"
-                    f"<h2 style='color:#5a5a87;'>{severity}</h2></div>", unsafe_allow_html=True)
-        show_prescription(severity)
 
-if __name__ == "__main__":
+            # Show the prescription based on severity
+            show_prescription(st.session_state['severity'])
+
+if __name__ == '__main__':
     main()
