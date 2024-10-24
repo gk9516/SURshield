@@ -263,28 +263,33 @@ def show_prescription(severity):
 
 # Function to show the survey inputs and collect user data
 def show_survey():
-    st.title("Medical Survey")
     user_data = {}
 
-    user_data['Gender'] = st.selectbox('Gender', ['Male', 'Female'])
-    user_data['Age'] = st.number_input('Age', min_value=0, max_value=120, step=1)
-    user_data['General Symptoms'] = st.selectbox('General Symptoms', list(symptom_mapping.keys()))
-    user_data['Pain Scale'] = st.slider('Pain Scale (0-10)', 0, 10)
-    user_data['Symptom Duration'] = st.selectbox('Symptom Duration', list(symptom_duration_mapping.keys()))
-    user_data['Onset'] = st.selectbox('Onset', ['Sudden', 'Gradual'])
-    user_data['Chronic Conditions'] = st.selectbox('Chronic Conditions', list(chronic_mapping.keys()))
-    user_data['Allergies'] = st.radio('Do you have allergies?', ['Yes', 'No'])
-    user_data['Medications'] = st.radio('Do you take medications?', ['Yes', 'No'])
-    user_data['Travel History'] = st.radio('Recent travel history?', ['Yes', 'No'])
-    user_data['Contact with Sick Individuals'] = st.radio('Contact with sick individuals?', ['Yes', 'No'])
-    user_data['Smoking'] = st.radio('Do you smoke?', ['Yes', 'No'])
-    user_data['Alcohol Consumption'] = st.selectbox('Alcohol Consumption', ['No', 'Occasionally', 'Regularly'])
-    user_data['Physical Activity'] = st.selectbox('Physical Activity', ['No', 'Light', 'Moderate', 'Intense'])
-    user_data['Stress Levels'] = st.slider('Stress Levels (0-10)', 0, 10)
-    user_data['Sleep Quality'] = st.selectbox('Sleep Quality', ['Excellent', 'Good', 'Fair', 'Poor'])
+    user_data['Gender'] = st.selectbox('Gender', options=['Select Gender', 'Male', 'Female'], index=0, key='gender')  
+    user_data['Age'] = st.number_input('Age', min_value=0, max_value=120, step=1, key='age')
+    user_data['General Symptoms'] = st.selectbox('General Symptoms', options=['Select Symptom'] + list(symptom_mapping.keys()), index=0, key='symptoms')
+    user_data['Pain Scale'] = st.slider('Pain Scale (0-10)', 0, 10, key='pain_scale')
+    user_data['Symptom Duration'] = st.selectbox('Symptom Duration', options=['Select Duration'] + list(symptom_duration_mapping.keys()), index=0, key='duration')
+    user_data['Onset'] = st.selectbox('Onset', options=['Select Onset', 'Sudden', 'Gradual'], index=0, key='onset')
+    user_data['Chronic Conditions'] = st.selectbox('Chronic Conditions', options=['Select Condition'] + list(chronic_mapping.keys()), index=0, key='chronic')
+    user_data['Allergies'] = st.radio('Do you have allergies?', options=['Please select', 'Yes', 'No'], index=0, key='allergies')
+    user_data['Medications'] = st.radio('Do you take medications?', options=['Please select', 'Yes', 'No'], index=0, key='medications')
+    user_data['Travel History'] = st.radio('Recent travel history?', options=['Please select', 'Yes', 'No'], index=0, key='travel')
+    user_data['Contact with Sick Individuals'] = st.radio('Contact with sick individuals?', options=['Please select', 'Yes', 'No'], index=0, key='contact')
+    user_data['Smoking'] = st.radio('Do you smoke?', options=['Please select', 'Yes', 'No'], index=0, key='smoking')
+    user_data['Alcohol Consumption'] = st.selectbox('Alcohol Consumption', options=['Select Alcohol Consumption'] + ['No', 'Occasionally', 'Regularly'], index=0, key='alcohol')
+    user_data['Physical Activity'] = st.selectbox('Physical Activity', options=['Select Activity'] + ['No', 'Light', 'Moderate', 'Intense'], index=0, key='activity')
+    user_data['Stress Levels'] = st.slider('Stress Levels (0-10)', 0, 10, key='stress')
+    user_data['Sleep Quality'] = st.selectbox('Sleep Quality', options=['Select Sleep Quality'] + ['Excellent', 'Good', 'Fair', 'Poor'], index=0, key='sleep')
 
-    if st.button('Submit'):
-        return user_data
+    if st.button("Submit"):
+        # Ensure all fields are filled before returning data
+        if all(value != 'Select Gender' and value != 'Select Symptom' and value != 'Select Duration' and 
+                value != 'Select Onset' and value != 'Select Condition' and value != 'Please select' 
+                for value in user_data.values()):
+            return user_data
+        else:
+            st.warning("Please fill all fields before submitting.")
     return None
 
 # Function to predict severity based on user data
