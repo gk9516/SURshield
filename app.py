@@ -268,7 +268,7 @@ def show_survey():
     user_data['Gender'] = st.selectbox('Gender', options=['Select Gender', 'Male', 'Female'], index=0, key='gender')  
     user_data['Age'] = st.number_input('Age', min_value=0, max_value=120, step=1, key='age')
     user_data['General Symptoms'] = st.selectbox('General Symptoms', options=['Select Symptom'] + list(symptom_mapping.keys()), index=0, key='symptoms')
-    user_data['Pain Scale'] = st.slider('Pain Scale (0-10)', 0, 10, key='pain_scale')
+    user_data['Pain Scale'] = st.slider('Pain Scale (0-10)', 0, 10, key='pain_scale', value=0)
     user_data['Symptom Duration'] = st.selectbox('Symptom Duration', options=['Select Duration'] + list(symptom_duration_mapping.keys()), index=0, key='duration')
     user_data['Onset'] = st.selectbox('Onset', options=['Select Onset', 'Sudden', 'Gradual'], index=0, key='onset')
     user_data['Chronic Conditions'] = st.selectbox('Chronic Conditions', options=['Select Condition'] + list(chronic_mapping.keys()), index=0, key='chronic')
@@ -279,7 +279,7 @@ def show_survey():
     user_data['Smoking'] = st.radio('Do you smoke?', options=['Please select', 'Yes', 'No'], index=0, key='smoking')
     user_data['Alcohol Consumption'] = st.selectbox('Alcohol Consumption', options=['Select Alcohol Consumption'] + ['No', 'Occasionally', 'Regularly'], index=0, key='alcohol')
     user_data['Physical Activity'] = st.selectbox('Physical Activity', options=['Select Activity'] + ['No', 'Light', 'Moderate', 'Intense'], index=0, key='activity')
-    user_data['Stress Levels'] = st.slider('Stress Levels (0-10)', 0, 10, key='stress')
+    user_data['Stress Levels'] = st.slider('Stress Levels (0-10)', 0, 10, key='stress', value=0)
     user_data['Sleep Quality'] = st.selectbox('Sleep Quality', options=['Select Sleep Quality'] + ['Excellent', 'Good', 'Fair', 'Poor'], index=0, key='sleep')
 
     if st.button("Submit"):
