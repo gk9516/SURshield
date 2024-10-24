@@ -185,112 +185,38 @@
 
 import streamlit as st
 import pandas as pd
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+import numpy as np
+import tensorflow as tf
 import joblib
-import time
-from sklearn.preprocessing import LabelEncoder
 
-# Load the model and encoders
-model = joblib.load('logistic_regression_model.pkl')
+# Load model
+model = tf.keras.models.load_model('severity_analysis_model.h5')
 
-# Load the CSV file and LabelEncoders for transformation
-data = pd.read_csv('expanded_synthetic_health_data (1).csv')
-X = data.drop(columns='Severity')  # Use this to check for missing features
+# Load encoders and scaler (assuming these objects were pickled)
+scaler = joblib.load('scaler.pkl')
+label_encoder = joblib.load('label_encoder.pkl')
 
-label_encoders = {}
-for column in data.select_dtypes(include=['object']).columns:
-    label_encoders[column] = LabelEncoder()
-    label_encoders[column].fit(data[column])
-
-# Conversion dictionary for manual conversions
-conversion_dict = {
-    "Gender": {"Female": 0, "Male": 1, "Unknown": 2},
-    "Smoking": {"No": 0, "Yes": 1},
+# Define mappings
+gender_mapping = {'Male': 1, 'Female': 0}
+symptom_mapping = {
+    "Abdominal pain": 1.0, "Chest pain": 2.0, "Constipation": 3.0, "Cough": 4.0, "Diarrhea": 5.0,
+    "Difficulty swallowing": 6.0, "Dizziness": 7.0, "Eye discomfort and redness": 8.0,
+    "Foot pain or ankle pain": 9.0, "Foot swelling or leg swelling": 10.0, "Headaches": 11.0,
+    "Heart palpitations": 12.0, "Hip pain": 13.0, "Knee pain": 14.0, "Low back pain": 15.0,
+    "Nasal congestion": 16.0, "Nausea or vomiting": 17.0, "Neck pain": 18.0, "Numbness or tingling in hands": 19.0,
+    "Shortness of breath": 20.0, "Shoulder pain": 21.0, "Sore throat": 22.0, "Urinary problems": 23.0,
+    "Wheezing": 24.0, "Ear ache": 25.0, "Fever": 26.0, "Joint pain or muscle pain": 27.0, "Skin rashes": 28.0
 }
-
-# Function to convert user inputs to the model-compatible format without showing warnings
-def convert_input(column, value):
-    if column in conversion_dict:
-        return conversion_dict[column].get(value, value)
-
-    # Handle unseen labels without showing warnings
-    if column in label_encoders:
-        try:
-            return label_encoders[column].transform([value])[0]
-        except ValueError:
-            return label_encoders[column].transform([label_encoders[column].classes_[0]])[0]
-    return value
-
-# Ensure feature names are consistent
-def adjust_feature_names(user_data):
-    feature_mapping = {
-        'Pain Scale (0-10)': 'Pain Scale',
-        'Stress Levels (0-10)': 'Stress Levels'
-    }
-    adjusted_data = {}
-    for feature, value in user_data.items():
-        adjusted_feature = feature_mapping.get(feature, feature)
-        adjusted_data[adjusted_feature] = value
-    return adjusted_data
-
-# Function to show loading spinner and predict severity
-def predict_severity(user_data):
-    adjusted_data = adjust_feature_names(user_data)
-    
-    with st.spinner('Predicting severity...'):
-        time.sleep(2)  # Simulate delay for prediction processing
-
-        model_input = {}
-        for column, value in adjusted_data.items():
-            model_input[column] = [convert_input(column, value)]
-        user_df = pd.DataFrame(model_input)
-
-        for col in X.columns:
-            if col not in user_df.columns:
-                user_df[col] = 0  # Default value for missing features
-
-        severity_prediction = model.predict(user_df)
-        severity_class = label_encoders['Severity'].inverse_transform(severity_prediction)
-
-        return severity_class[0]
-
-# Survey Form
-def show_survey():
-    st.title('MEDICAL SURVEY PAGE')
-    st.write('Please fill out the following questionnaire to assess severity:')
-    
-    user_data = {}
-    questions = {
-        'Gender': ['Male', 'Female', 'Unknown'],
-        'General Symptoms': ['Fatigue', 'Cough', 'Shortness of Breath'],
-        'Pain Scale (0-10)': 'number',
-        'Symptom Duration': ['Less than 2 days', '2-5 days', 'More than 5 days'],
-        'Onset': ['Sudden', 'Gradual'],
-        'Chronic Conditions': ['Hypertension', 'Diabetes', 'Asthma', 'None'],
-        'Allergies': ['Yes', 'No'],
-        'Medications': ['Yes', 'No'],
-        'Travel History': ['Yes', 'No'],
-        'Contact with Sick Individuals': ['Yes', 'No'],
-        'Smoking': ['Yes', 'No'],
-        'Alcohol Consumption': ['Yes', 'No', 'Occasionally'],
-        'Physical Activity': ['Daily', 'Weekly', 'Monthly', 'Rarely', 'Never'],
-        'Stress Levels (0-10)': 'number',
-        'Sleep Quality': ['Very Good', 'Good', 'Average', 'Poor', 'Very Poor']
-    }
-
-    user_data['Age'] = st.number_input('Age:', min_value=1, max_value=100, step=1)
-
-    for question, input_type in questions.items():
-        if input_type == 'number':
-            user_data[question] = st.slider(f'{question}', min_value=0, max_value=10, step=1)
-        else:
-            user_data[question] = st.selectbox(f'{question}', options=[""] + input_type)
-
-    if st.button('Submit', key='submit_button', help="Submit the survey", use_container_width=True):
-        if any(v == "" for k, v in user_data.items() if k != 'Age'):
-            st.warning("Please fill all the mandatory fields.")
-        else:
-            return user_data
-    return None
+onset_mapping = {'Sudden': 1, 'Gradual': 0}
+symptom_duration_mapping = {'Less than 2 days': 0, '2-5 days': 1, 'More than 5 days': 2}
+chronic_mapping = {
+    "Diabetes": 1.0, "Hypertension": 2.0, "Asthma": 3.0, "Arthritis": 4.0, "Obesity": 5.0,
+    "Cholesterol": 6.0, "Depression": 7.0, "Cirrhosis": 8.0, "No chronic conditions": 9.0
+}
+alcohol_mapping = {'No': 0, 'Occasionally': 1, 'Regularly': 2}
+physical_mapping = {'No': 0, 'Light': 1, 'Moderate': 2, 'Intense': 3}
+sleep_mapping = {'Excellent': 3.0, 'Good': 2.0, 'Fair': 1.0, 'Poor': 0.0}
 
 # Function to show prescription based on severity
 def show_prescription(severity):
@@ -307,16 +233,16 @@ def show_prescription(severity):
         st.write("- Drink a lot of water.")
         st.write("- Don't stress too much.")
         st.write("- Avoid alcohol and cigarettes if possible.")
-        st.write("- Don't sit for too long, touch some grass.")
+        st.write("- Don't sit for too long; touch some grass.")
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Book an Appointment"):
                 st.session_state['action'] = 'appointment'
-                st.experimental_rerun()
+                st.rerun()
         with col2:
             if st.button("Order Medicines"):
                 st.session_state['action'] = 'medicines'
-                st.experimental_rerun()
+                st.rerun()
     elif severity == 'Severe':
         st.write("### Warning:")
         st.write("- Do not do anything to counter the effect.")
@@ -328,12 +254,69 @@ def show_prescription(severity):
         with col1:
             if st.button("Special Appointment"):
                 st.session_state['action'] = 'special_appointment'
-                st.experimental_rerun()
+                st.rerun()
         with col2:
             if st.button("Priority Medicines"):
                 st.session_state['action'] = 'priority_medicines'
-                st.experimental_rerun()
+                st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
+
+# Function to show the survey inputs and collect user data
+def show_survey():
+    st.title("Medical Survey")
+    user_data = {}
+
+    user_data['Gender'] = st.selectbox('Gender', ['Male', 'Female'])
+    user_data['Age'] = st.number_input('Age', min_value=0, max_value=120, step=1)
+    user_data['General Symptoms'] = st.selectbox('General Symptoms', list(symptom_mapping.keys()))
+    user_data['Pain Scale'] = st.slider('Pain Scale (0-10)', 0, 10)
+    user_data['Symptom Duration'] = st.selectbox('Symptom Duration', list(symptom_duration_mapping.keys()))
+    user_data['Onset'] = st.selectbox('Onset', ['Sudden', 'Gradual'])
+    user_data['Chronic Conditions'] = st.selectbox('Chronic Conditions', list(chronic_mapping.keys()))
+    user_data['Allergies'] = st.radio('Do you have allergies?', ['Yes', 'No'])
+    user_data['Medications'] = st.radio('Do you take medications?', ['Yes', 'No'])
+    user_data['Travel History'] = st.radio('Recent travel history?', ['Yes', 'No'])
+    user_data['Contact with Sick Individuals'] = st.radio('Contact with sick individuals?', ['Yes', 'No'])
+    user_data['Smoking'] = st.radio('Do you smoke?', ['Yes', 'No'])
+    user_data['Alcohol Consumption'] = st.selectbox('Alcohol Consumption', ['No', 'Occasionally', 'Regularly'])
+    user_data['Physical Activity'] = st.selectbox('Physical Activity', ['No', 'Light', 'Moderate', 'Intense'])
+    user_data['Stress Levels'] = st.slider('Stress Levels (0-10)', 0, 10)
+    user_data['Sleep Quality'] = st.selectbox('Sleep Quality', ['Excellent', 'Good', 'Fair', 'Poor'])
+
+    if st.button('Submit'):
+        return user_data
+    return None
+
+# Function to predict severity based on user data
+def predict_severity(user_data):
+    # Process the user inputs and map to appropriate values
+    user_data['Gender'] = gender_mapping[user_data['Gender']]
+    user_data['General Symptoms'] = symptom_mapping[user_data['General Symptoms']]
+    user_data['Pain Scale'] = user_data['Pain Scale'] / 10.0
+    user_data['Onset'] = onset_mapping[user_data['Onset']]
+    user_data['Symptom Duration'] = symptom_duration_mapping[user_data['Symptom Duration']]
+    user_data['Chronic Conditions'] = chronic_mapping[user_data['Chronic Conditions']]
+    user_data['Allergies'] = 1 if user_data['Allergies'] == 'Yes' else 0
+    user_data['Medications'] = 1 if user_data['Medications'] == 'Yes' else 0
+    user_data['Travel History'] = 1 if user_data['Travel History'] == 'Yes' else 0
+    user_data['Contact with Sick Individuals'] = 1 if user_data['Contact with Sick Individuals'] == 'Yes' else 0
+    user_data['Smoking'] = 1 if user_data['Smoking'] == 'Yes' else 0
+    user_data['Alcohol Consumption'] = alcohol_mapping[user_data['Alcohol Consumption']]
+    user_data['Physical Activity'] = physical_mapping[user_data['Physical Activity']]
+    user_data['Stress Levels'] = user_data['Stress Levels'] / 10.0
+    user_data['Sleep Quality'] = sleep_mapping[user_data['Sleep Quality']]
+
+    # Convert the user input into a DataFrame
+    user_df = pd.DataFrame([user_data])
+
+    # Apply scaler
+    numeric_columns = ['Age', 'Symptom Duration', 'Chronic Conditions', 'Alcohol Consumption', 'Physical Activity', 'Sleep Quality']
+    user_df[numeric_columns] = scaler.transform(user_df[numeric_columns])
+
+    # Make prediction
+    prediction = model.predict(user_df)
+    severity_class = label_encoder.inverse_transform([np.argmax(prediction)])
+    return severity_class[0]
 
 # Function to display appointment confirmation
 def confirm_appointment(severity, user_data):
@@ -345,7 +328,7 @@ def confirm_appointment(severity, user_data):
     if st.button("Confirm Appointment"):
         st.success("Your appointment has been confirmed!")
         # Redirect to a blank page
-        st.experimental_rerun()
+        st.rerun()
 
 # Function to display medicine invoice
 def medicine_invoice():
@@ -362,65 +345,63 @@ def medicine_invoice():
     if st.button("Confirm Bill"):
         st.success("Your bill has been confirmed!")
         # Redirect to a blank page
-        st.experimental_rerun()
+        st.rerun()
 
-# Main Streamlit Application
-def main():
-    st.set_page_config(page_title="Survey Page", layout="centered", initial_sidebar_state="collapsed")
-    
-    # Set background and text color
-    st.markdown("""<style>
-        .main {
-            background-color: #c2e3fe;
-            color: #333;
-        }
-        h1 {
-            color: #5a5a87;
-        }
-        .stButton>button {
-            background-color: #c2e3fe;
-            color: white;
-            width: 100%;
-            height: 60px;
-            font-size: 18px;
-            border-radius: 10px;
-        }
-        .stSlider>div>div>div>div>div>div {
-            color: #5a5a87;
-        }
-        .stSelectbox>div>div>div>div {
-            color: #333;
-        }
-        </style>""", unsafe_allow_html=True)
+# Streamlit Page Configuration
+st.set_page_config(page_title="Survey Page", layout="centered", initial_sidebar_state="collapsed")
 
-    # Initialize session state variables
-    if 'user_data' not in st.session_state:
-        st.session_state['user_data'] = None
-    if 'action' not in st.session_state:
-        st.session_state['action'] = None
-    if 'severity' not in st.session_state:
-        st.session_state['severity'] = None
+# Set background and text color
+st.markdown("""<style>
+    .main {
+        background-color: #c2e3fe;
+        color: #333;
+    }
+    h1 {
+        color: #5a5a87;
+    }
+    .stButton>button {
+        background-color: #c2e3fe;
+        color: white;
+        width: 100%;
+        height: 60px;
+        font-size: 18px;
+        border-radius: 10px;
+    }
+    .stSlider>div>div>div>div>div>div {
+        color: #5a5a87;
+    }
+    .stSelectbox>div>div>div>div {
+        color: #333;
+    }
+</style>""", unsafe_allow_html=True)
 
-    # Check if action is defined in session state and route accordingly
-    action = st.session_state.get('action')  # Safely access the action key
+# Initialize session state variables
+if 'user_data' not in st.session_state:
+    st.session_state['user_data'] = None
+    st.session_state['action'] = None
 
-    if action:
-        if action == 'appointment':
-            confirm_appointment(st.session_state['severity'], st.session_state['user_data'])
-        elif action == 'medicines':
-            medicine_invoice()
-        elif action == 'special_appointment':
-            confirm_appointment(st.session_state['severity'], st.session_state['user_data'])
-        elif action == 'priority_medicines':
-            medicine_invoice()
-    else:
-        user_data = show_survey()
-        if user_data:
-            st.session_state['user_data'] = user_data
-            st.session_state['severity'] = predict_severity(user_data)
+# Main logic for user interaction
+if st.session_state['action']:
+    if st.session_state['action'] == 'appointment':
+        confirm_appointment(st.session_state['severity'], st.session_state['user_data'])
+    elif st.session_state['action'] == 'medicines':
+        medicine_invoice()
+    elif st.session_state['action'] == 'special_appointment':
+        confirm_appointment('Severe', st.session_state['user_data'])
+    elif st.session_state['action'] == 'priority_medicines':
+        medicine_invoice()
 
-            # Show the prescription based on severity
-            show_prescription(st.session_state['severity'])
-
-if __name__ == '__main__':
-    main()
+if not st.session_state['user_data']:
+    user_data = show_survey()
+    if user_data:
+        st.session_state['user_data'] = user_data
+        st.session_state['severity'] = predict_severity(user_data)
+        st.rerun()
+else:
+    # Display result page
+    st.title("Severity Prediction Result")
+    st.write("### Your condition based on your response seems to be:")
+    severity = st.session_state['severity']
+    st.markdown(f"<div style='background-color:#b3d9ff;padding:20px;text-align:center;border-radius:10px;'>"
+                f"<h2 style='color:#5a5a87;'>{severity}</h2></div>", unsafe_allow_html=True)
+    show_prescription(severity)
